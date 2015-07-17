@@ -10,7 +10,20 @@
 
 #import "ViewController.h"
 #import "JukeboxMacro.h"
+#import <MediaPlayer/MediaPlayer.h>
+#import <objc/runtime.h>
 
+@implementation MPRemoteCommand (daidouji)
+
+- (void)resetTargetInvocations {
+    unsigned int ivarCount;
+    Ivar *ivars = class_copyIvarList ([ self class ], &ivarCount);
+    NSMutableArray *targetInvocations = object_getIvar(self, ivars[2]);
+    [ targetInvocations removeAllObjects ];
+    free (ivars);
+}
+
+@end
 
 @interface ViewController ()
 
@@ -30,7 +43,6 @@
                                                              withExtension:@"mp3" ];
 
     player = [ AVPlayer playerWithURL:audioFileLocationURL ];
-
 }
 
 - (void)viewWillAppear:(BOOL)animated {
@@ -66,11 +78,31 @@
     if (isOn) {
 
         [ player play ];
-
+        MPRemoteCommandCenter *commandCenter = [ MPRemoteCommandCenter sharedCommandCenter ];
+        [ commandCenter.playCommand resetTargetInvocations ];
+        [ commandCenter.playCommand addTargetWithHandler: ^MPRemoteCommandHandlerStatus(MPRemoteCommandEvent *event) {
+            [ player play ];
+            return MPRemoteCommandHandlerStatusSuccess;
+        } ];
+        commandCenter.playCommand.enabled = YES;
+        
+        [ commandCenter.pauseCommand resetTargetInvocations ];
+        [ commandCenter.pauseCommand addTargetWithHandler: ^MPRemoteCommandHandlerStatus(MPRemoteCommandEvent *event) {
+            [ player pause ];
+            return MPRemoteCommandHandlerStatusSuccess;
+        } ];
+        commandCenter.pauseCommand.enabled = YES;
+        commandCenter.nextTrackCommand.enabled = NO;
+        commandCenter.previousTrackCommand.enabled = NO;
+        commandCenter.togglePlayPauseCommand.enabled = NO;
+        
     } else {
 
         [ player pause ];
-
+        MPRemoteCommandCenter *commandCenter = [ MPRemoteCommandCenter sharedCommandCenter ];
+        [ commandCenter.playCommand resetTargetInvocations ];
+        [ commandCenter.pauseCommand resetTargetInvocations ];
+        
     }
 
     [ self setRemoteControl ];
@@ -92,9 +124,7 @@
     [ [ UIApplication sharedApplication ] beginReceivingRemoteControlEvents ];
     [ [ UIApplication sharedApplication ] becomeFirstResponder ];
     [ JukeboxMacro sharedSingleton ].requestingRemoteControl = NO;
-
 }
-
 
 - (void)viewDidAppear:(BOOL)animated {
     [ super viewDidAppear:animated ];
@@ -117,13 +147,20 @@
 }
 
 - (void)leaveVideoFullScreen {
-    [ self playMusic:YES ];
-    [ [ NSNotificationCenter defaultCenter ] removeObserver:self
-                                                       name:UIWindowDidBecomeHiddenNotification
-                                                     object:nil ];
-    [ [ NSNotificationCenter defaultCenter ] addObserver:self
-                                                selector:@selector(enterVideoFullScreen)
-                                                    name:UIWindowDidBecomeVisibleNotification
-                                                  object:nil ];
+    
+    __weak ViewController *weakSelf = self;
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+        [ NSThread sleepForTimeInterval:1.0f ];
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [ weakSelf playMusic:YES ];
+            [ [ NSNotificationCenter defaultCenter ] removeObserver:weakSelf
+                                                               name:UIWindowDidBecomeHiddenNotification
+                                                             object:nil ];
+            [ [ NSNotificationCenter defaultCenter ] addObserver:weakSelf
+                                                        selector:@selector(enterVideoFullScreen)
+                                                            name:UIWindowDidBecomeVisibleNotification
+                                                          object:nil ];
+        });
+    });
 }
 @end

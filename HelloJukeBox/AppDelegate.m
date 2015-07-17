@@ -43,42 +43,6 @@ didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
 
 }
 
-- (void)remoteControlReceivedWithEvent:(UIEvent *)event {
-    [ super remoteControlReceivedWithEvent:event ];
-    
-    if (event.type == UIEventTypeRemoteControl) {
-        switch (event.subtype) {
-
-            case UIEventSubtypeNone:
-                break;
-            case UIEventSubtypeMotionShake:
-                break;
-            case UIEventSubtypeRemoteControlPlay:
-                [ viewController playMusic:YES ];
-                break;
-            case UIEventSubtypeRemoteControlPause:
-                [ viewController playMusic:NO ];
-                break;
-            case UIEventSubtypeRemoteControlStop:
-                break;
-            case UIEventSubtypeRemoteControlTogglePlayPause:
-                break;
-            case UIEventSubtypeRemoteControlNextTrack:
-                break;
-            case UIEventSubtypeRemoteControlPreviousTrack:
-                break;
-            case UIEventSubtypeRemoteControlBeginSeekingBackward:
-                break;
-            case UIEventSubtypeRemoteControlEndSeekingBackward:
-                break;
-            case UIEventSubtypeRemoteControlBeginSeekingForward:
-                break;
-            case UIEventSubtypeRemoteControlEndSeekingForward:
-                break;
-        }
-    }
-}
-
 - (void)applicationDidEnterBackground:(UIApplication *)application {
     // Use this method to release shared resources, save user data, invalidate timers, and store enough application state information to restore your application to its current state in case it is terminated later.
     // If your application supports background execution, this method is called instead of applicationWillTerminate: when the user quits.
